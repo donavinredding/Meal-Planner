@@ -1,0 +1,432 @@
+/* ====================================================================
+   THEME STYLES - Matching Travel App Design & Color Palette
+   ==================================================================== */
+
+:root {
+  --bg-color: #E2D6CA;          /* Cream background */
+  --primary-red: #66021E;       /* Deep Red */
+  --primary-green: #6B8071;     /* Sage Green */
+  --primary-orange: #B75109;    /* Warm Orange */
+  --primary-tan: #BC9E84;       /* Tan Accent */
+  --text-dark: #2b2b2b;
+  --text-muted: #5c5c5c;
+  --polaroid-bg: #ffffff;
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  --radius: 8px;
+
+  /* Typography Families */
+  --font-body: 'Courier Prime', monospace;
+  --font-heading: 'Special Elite', cursive;
+  --font-mono: 'VT323', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  font-family: var(--font-body);
+  padding: 20px;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header & Auth Bar */
+.app-header {
+  text-align: center;
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.user-auth-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto 15px auto;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+#user-display-email {
+  color: var(--primary-red);
+  font-family: var(--font-body);
+}
+
+.app-title {
+  font-family: var(--font-heading);
+  font-size: 2.4rem;
+  color: var(--primary-red);
+  letter-spacing: 1px;
+}
+
+.app-subtitle {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  color: var(--primary-orange);
+  letter-spacing: 2px;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background-color: var(--primary-tan);
+  color: #fff;
+  font-family: var(--font-heading);
+  border: none;
+  padding: 10px 18px;
+  font-size: 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.tab-btn:hover {
+  background-color: var(--primary-orange);
+}
+
+.tab-btn.active {
+  background-color: var(--primary-red);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Layout Main Container */
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px dashed var(--primary-tan);
+  padding-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.section-header h2 {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+  font-size: 1.8rem;
+}
+
+.sub-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* 14-Day Calendar Grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.calendar-day-card {
+  background-color: var(--polaroid-bg);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-height: 140px;
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary-green);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+.calendar-day-card:hover {
+  transform: translateY(-3px);
+}
+
+.calendar-day-card.has-warning {
+  border-top-color: var(--primary-red);
+  background-color: #fff9f9;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.day-title {
+  color: var(--primary-red);
+  font-family: var(--font-heading);
+}
+
+.warning-badge {
+  color: var(--primary-red);
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: #fde8e8;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.meal-name {
+  font-weight: bold;
+  margin-top: 8px;
+  font-size: 0.95rem;
+}
+
+.meal-notes-preview {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cards & Grid System */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.polaroid-card {
+  background: var(--polaroid-bg);
+  padding: 15px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.polaroid-card h3 {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+  margin-bottom: 8px;
+}
+
+/* Filters & Inputs */
+.filter-bar {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--primary-tan);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  background-color: #fcfaf8;
+}
+
+.textarea-field {
+  resize: vertical;
+}
+
+.tag-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tag-pill {
+  border: none;
+  background: var(--primary-tan);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+
+.tag-pill.active {
+  background: var(--primary-green);
+}
+
+/* Shopping Urgency List */
+.shopping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shopping-item {
+  background: var(--polaroid-bg);
+  padding: 15px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 6px solid var(--primary-orange);
+}
+
+.shopping-item.urgent {
+  border-left-color: var(--primary-red);
+  background: #fffafa;
+}
+
+.shopping-info h4 {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+}
+
+.shopping-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Expired Section */
+.expired-section {
+  margin-top: 40px;
+  border-top: 2px solid var(--primary-red);
+  padding-top: 20px;
+}
+
+.expired-section h3 {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+  margin-bottom: 15px;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-heading);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn:hover { opacity: 0.9; }
+.btn-primary { background: var(--primary-green); color: white; }
+.btn-danger { background: var(--primary-red); color: white; }
+.btn-secondary { background: var(--primary-tan); color: white; }
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 15px;
+}
+
+.modal-overlay.hidden { display: none; }
+
+.modal-card {
+  background: var(--bg-color);
+  padding: 25px;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow);
+  border: 2px solid var(--primary-tan);
+}
+
+.modal-title {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.highlight-text {
+  font-family: var(--font-heading);
+  color: var(--primary-red);
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.app-footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Responsive Styles for Mobile & Tablet */
+@media (max-width: 900px) {
+  .calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-row {
+    flex-direction: column;
+  }
+}

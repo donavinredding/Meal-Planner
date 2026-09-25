@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Planner & Inventory System</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Supabase JS Client v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="user-auth-bar">
+      <span id="user-display-email">Not Signed In</span>
+      <button id="btn-auth-action" class="btn btn-secondary">Sign In</button>
+    </div>
+    <h1 class="app-title">Meal Planner & Inventory</h1>
+    <p class="app-subtitle">AUTOMATED MEAL TRACKER & SHOPPING LIST</p>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="calendar">🗓️ Calendar</button>
+    <button class="tab-btn" data-tab="inventory">📦 Inventory</button>
+    <button class="tab-btn" data-tab="need-to-buy">🛒 Need to Buy</button>
+    <button class="tab-btn" data-tab="recipes">📖 Recipe Library</button>
+  </nav>
+
+  <main class="content-container">
+
+    <!-- 1. CALENDAR TAB -->
+    <section id="calendar-tab" class="tab-content active">
+      <div class="section-header">
+        <h2>14-Day Calendar Grid</h2>
+        <span class="sub-text">Calculated dynamically from current week's Sunday</span>
+      </div>
+      <div id="calendar-grid" class="calendar-grid">
+        <!-- Dynamically rendered 14 calendar days -->
+      </div>
+    </section>
+
+    <!-- 2. INVENTORY TAB -->
+    <section id="inventory-tab" class="tab-content">
+      <div class="section-header">
+        <h2>Active Inventory</h2>
+        <button class="btn btn-primary" id="btn-add-inventory">+ Add New Item</button>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="inventory-search" placeholder="Search inventory items..." class="input-field" />
+        <div id="tag-filters" class="tag-filters">
+          <button class="tag-pill active" data-tag="ALL">All</button>
+          <button class="tag-pill" data-tag="Pantry">Pantry</button>
+          <button class="tag-pill" data-tag="Fridge">Fridge</button>
+          <button class="tag-pill" data-tag="Freezer">Freezer</button>
+          <button class="tag-pill" data-tag="Produce">Produce</button>
+        </div>
+      </div>
+
+      <div id="inventory-list" class="card-grid">
+        <!-- Dynamically rendered inventory items -->
+      </div>
+
+      <!-- Expired / Replacement Section -->
+      <div class="expired-section">
+        <h3>⚠️ Expired / Needs Replacement</h3>
+        <div id="expired-list" class="card-grid">
+          <!-- Dynamically populated expired items -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. NEED TO BUY TAB -->
+    <section id="need-to-buy-tab" class="tab-content">
+      <div class="section-header">
+        <h2>Need to Buy List</h2>
+        <span class="sub-text">Sorted by order of urgency for planned meals</span>
+      </div>
+      <div id="shopping-list" class="shopping-list">
+        <!-- Dynamically rendered urgency items -->
+      </div>
+    </section>
+
+    <!-- 4. RECIPE LIBRARY TAB -->
+    <section id="recipes-tab" class="tab-content">
+      <div class="section-header">
+        <h2>Recipe & Preset Library</h2>
+        <button class="btn btn-primary" id="btn-add-recipe">+ Create Recipe Preset</button>
+      </div>
+      <div id="recipe-list" class="card-grid">
+        <!-- Dynamically rendered recipe cards -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Created for Meal Planning & Household Inventory</p>
+  </footer>
+
+  <!-- ==================================================================== -->
+  <!-- MODALS -->
+  <!-- ==================================================================== -->
+
+  <!-- AUTHENTICATION MODAL (SIGN IN / SIGN UP) -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="auth-modal-title" class="modal-title">Sign In</h3>
+      <p id="auth-status-msg" style="color: var(--primary-red); font-size: 0.85rem; margin-bottom: 10px;"></p>
+      <form id="auth-form">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="auth-email" class="input-field" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="auth-password" class="input-field" placeholder="••••••••" required />
+        </div>
+        <div class="modal-actions" style="justify-content: space-between; align-items: center;">
+          <a href="#" id="toggle-auth-mode" style="font-size: 0.85rem; color: var(--primary-red);">Need an account? Sign Up</a>
+          <div>
+            <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+            <button type="submit" id="btn-auth-submit" class="btn btn-primary">Sign In</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- GENERIC CONFIRMATION MODAL -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="confirm-title" class="modal-title">Are you sure?</h3>
+      <p id="confirm-message">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="confirm-btn-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="confirm-btn-proceed" class="btn btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT INVENTORY MODAL -->
+  <div id="inventory-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="inventory-modal-title" class="modal-title">Add Inventory Item</h3>
+      <form id="inventory-form">
+        <input type="hidden" id="inv-id" />
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="inv-name" class="input-field" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category Tag</label>
+            <select id="inv-category" class="input-field">
+              <option value="Pantry">Pantry</option>
+              <option value="Fridge">Fridge</option>
+              <option value="Freezer">Freezer</option>
+              <option value="Produce">Produce</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <select id="inv-unit" class="input-field">
+              <option value="piece">piece</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="oz">oz</option>
+              <option value="lb">lb</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+              <option value="cup">cup</option>
+              <option value="can">can</option>
+              <option value="pack">pack</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Stock</label>
+            <input type="number" step="0.01" id="inv-qty" class="input-field" required />
+          </div>
+          <div class="form-group">
+            <label>Expiration Date (Optional)</label>
+            <input type="date" id="inv-exp" class="input-field" />
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RESTOCK ITEM MODAL -->
+  <div id="restock-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">Restock Purchased Item</h3>
+      <form id="restock-form">
+        <input type="hidden" id="restock-inv-id" />
+        <p id="restock-item-name" class="highlight-text"></p>
+        <div class="form-group">
+          <label>Added Quantity</label>
+          <input type="number" step="0.01" id="restock-qty" class="input-field" required />
+        </div>
+        <div class="form-group">
+          <label>New Expiration Date (Optional)</label>
+          <input type="date" id="restock-exp" class="input-field" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Restock to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MEAL ASSIGNMENT MODAL -->
+  <div id="meal-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="meal-modal-title" class="modal-title">Schedule Meal</h3>
+      <form id="meal-form">
+        <input type="hidden" id="meal-id" />
+        <input type="hidden" id="meal-date-val" />
+        <p id="meal-date-label" class="highlight-text"></p>
+        <div class="form-group">
+          <label>Recipe Preset (Optional)</label>
+          <select id="meal-recipe-select" class="input-field">
+            <option value="">-- Custom Meal --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Meal Title</label>
+          <input type="text" id="meal-title" class="input-field" required />
+        </div>
+        <div class="form-group">
+          <label>Free-form Prep / Cooking Notes</label>
+          <textarea id="meal-notes" class="input-field textarea-field" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-delete-meal" class="btn btn-danger hidden">Clear Day</button>
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Meal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RECIPE CREATION/EDIT MODAL -->
+  <div id="recipe-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="recipe-modal-title" class="modal-title">Create Recipe Preset</h3>
+      <form id="recipe-form">
+        <input type="hidden" id="recipe-id" />
+        <div class="form-group">
+          <label>Recipe Title</label>
+          <input type="text" id="recipe-title-input" class="input-field" required />
+        </div>
+        <div class="form-group">
+          <label>Prep / Cooking Notes</label>
+          <textarea id="recipe-notes-input" class="input-field textarea-field" rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Recipe</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RECIPE ASSIGNMENT DATE PICKER MODAL -->
+  <div id="assign-recipe-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">Assign Recipe to Date</h3>
+      <input type="hidden" id="assign-recipe-id" />
+      <div class="form-group">
+        <label>Select Date within 14-Day Window</label>
+        <select id="assign-date-select" class="input-field"></select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+        <button type="button" id="btn-confirm-assign-recipe" class="btn btn-primary">Assign Meal</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
