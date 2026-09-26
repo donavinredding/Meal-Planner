@@ -183,11 +183,34 @@ body {
   font-family: var(--font-heading);
 }
 
+/* Auto-Filling & Scaling Meal Title Container */
+.meal-name-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  padding: 6px 0;
+  overflow: hidden;
+}
+
 .meal-name {
+  font-family: var(--font-heading);
   font-weight: bold;
-  margin-top: 10px;
+  color: var(--text-dark);
+  line-height: 1.1;
+  word-break: break-word;
+  hyphens: auto;
+  margin: auto 0;
+  width: 100%;
+}
+
+.meal-name.empty-meal {
+  font-family: var(--font-body);
+  color: #aaa;
   font-size: 0.95rem;
-  line-height: 1.3;
+  font-weight: normal;
 }
 
 /* Cards & Grid System */
@@ -258,6 +281,47 @@ body {
 
 .textarea-field {
   resize: vertical;
+}
+
+/* Ingredient Picker Form Elements */
+.ingredient-picker-box {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px dashed var(--primary-tan);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.ingredients-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ingredient-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ingredient-row select {
+  flex: 2;
+}
+
+.ingredient-row input[type="number"] {
+  flex: 1;
+}
+
+.btn-remove-row {
+  background: var(--primary-red);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
 .tag-filters {
@@ -346,6 +410,7 @@ body {
   display: flex;
   gap: 8px;
   margin-top: 15px;
+  flex-wrap: wrap;
 }
 
 /* Modals */
@@ -367,7 +432,9 @@ body {
   padding: 25px;
   border-radius: var(--radius);
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: var(--shadow);
   border: 2px solid var(--primary-tan);
 }
