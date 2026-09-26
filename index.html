@@ -111,7 +111,7 @@
   <!-- MODALS -->
   <!-- ==================================================================== -->
 
-  <!-- AUTHENTICATION MODAL (SIGN IN / SIGN UP) -->
+  <!-- AUTHENTICATION MODAL -->
   <div id="auth-modal" class="modal-overlay hidden">
     <div class="modal-card">
       <h3 id="auth-modal-title" class="modal-title">Sign In</h3>
@@ -234,20 +234,28 @@
         <input type="hidden" id="meal-id" />
         <input type="hidden" id="meal-date-val" />
         <p id="meal-date-label" class="highlight-text"></p>
+        
         <div class="form-group">
           <label>Recipe Preset (Optional)</label>
           <select id="meal-recipe-select" class="input-field">
             <option value="">-- Custom Meal --</option>
           </select>
         </div>
+
         <div class="form-group">
           <label>Meal Title</label>
           <input type="text" id="meal-title" class="input-field" required />
         </div>
+
         <div class="form-group">
           <label>Free-form Prep / Cooking Notes</label>
           <textarea id="meal-notes" class="input-field textarea-field" rows="3"></textarea>
         </div>
+
+        <div style="margin-bottom: 15px;">
+          <button type="button" id="btn-save-as-preset" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;">+ Save Form as Recipe Preset</button>
+        </div>
+
         <div class="modal-actions">
           <button type="button" id="btn-delete-meal" class="btn btn-danger hidden">Clear Day</button>
           <button type="button" class="btn btn-secondary close-modal">Cancel</button>
