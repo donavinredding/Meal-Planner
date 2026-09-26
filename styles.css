@@ -169,11 +169,6 @@ body {
   transform: translateY(-3px);
 }
 
-.calendar-day-card.has-warning {
-  border-top-color: var(--primary-red);
-  background-color: #fff9f9;
-}
-
 .day-header {
   display: flex;
   justify-content: space-between;
@@ -188,30 +183,11 @@ body {
   font-family: var(--font-heading);
 }
 
-.warning-badge {
-  color: var(--primary-red);
-  font-size: 0.75rem;
-  font-weight: bold;
-  background: #fde8e8;
-  padding: 2px 5px;
-  border-radius: 4px;
-  margin-top: 5px;
-  display: inline-block;
-}
-
 .meal-name {
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 0.95rem;
-}
-
-.meal-notes-preview {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
 }
 
 /* Cards & Grid System */
@@ -230,12 +206,36 @@ body {
   flex-direction: column;
   justify-content: space-between;
   position: relative;
+  border: 1px solid transparent;
+}
+
+/* Soon to Expire Highlight */
+.polaroid-card.soon-to-expire {
+  border: 2px solid var(--primary-orange);
+  background-color: #fffbf7;
+}
+
+/* Expired Section Item styling */
+.polaroid-card.expired-item {
+  border: 2px solid var(--primary-red) !important;
+  background-color: #fff8f8;
 }
 
 .polaroid-card h3 {
   font-family: var(--font-heading);
   color: var(--primary-red);
   margin-bottom: 8px;
+}
+
+.soon-badge {
+  color: var(--primary-orange);
+  font-size: 0.75rem;
+  font-weight: bold;
+  background: #fdf2e9;
+  padding: 3px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 5px;
 }
 
 /* Filters & Inputs */
@@ -415,7 +415,7 @@ body {
   color: var(--text-muted);
 }
 
-/* Responsive Styles for Mobile & Tablet */
+/* Responsive Styles */
 @media (max-width: 900px) {
   .calendar-grid {
     grid-template-columns: repeat(2, 1fr);
