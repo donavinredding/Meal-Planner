@@ -55,6 +55,7 @@ async function initApp() {
       renderCalendar();
       renderInventory();
       renderRecipes();
+      renderNeedToBuy();
     }
   });
 
@@ -74,10 +75,10 @@ async function refreshAllData(client) {
   await Promise.all([
     fetchInventory(client),
     fetchRecipes(client),
-    fetchCalendarMeals(client),
-    fetchNeedToBuy(client)
+    fetchCalendarMeals(client)
   ]);
   renderCalendar();
+  renderNeedToBuy();
 }
 
 // Helper to safely format local Date to YYYY-MM-DD
@@ -175,7 +176,7 @@ function renderCalendar() {
     const meal = activeCalendar.find(m => m.meal_date === dateStr);
 
     const card = document.createElement('div');
-    card.className = `calendar-day-card ${meal && meal.has_missing_ingredients ? 'has-warning' : ''}`;
+    card.className = 'calendar-day-card';
     
     card.innerHTML = `
       <div>
@@ -184,10 +185,6 @@ function renderCalendar() {
           <span>${monthDay}</span>
         </div>
         ${meal ? `<div class="meal-name">${meal.custom_title || 'Scheduled Meal'}</div>` : '<div class="meal-name" style="color: #aaa;">+ Add Meal</div>'}
-        ${meal && meal.prep_notes ? `<div class="meal-notes-preview">${meal.prep_notes}</div>` : ''}
-      </div>
-      <div>
-        ${meal && meal.has_missing_ingredients ? '<span class="warning-badge">⚠️ Missing Items</span>' : ''}
       </div>
     `;
 
@@ -224,6 +221,7 @@ async function fetchInventory(client) {
     if (!error && data) {
       activeInventory = data;
       renderInventory();
+      renderNeedToBuy();
     }
   } catch (err) {
     console.error('Inventory fetch error:', err);
@@ -241,16 +239,24 @@ function renderInventory() {
   list.innerHTML = '';
   expiredList.innerHTML = '';
 
-  const todayStr = formatLocalDate(new Date());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = formatLocalDate(today);
+
+  // Date threshold for "Soon to Expire" (3 days)
+  const soonThreshold = new Date(today);
+  soonThreshold.setDate(today.getDate() + 3);
+  const soonThresholdStr = formatLocalDate(soonThreshold);
 
   activeInventory.forEach(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchVal);
     const matchesTag = activeFilterTag === 'ALL' || item.category === activeFilterTag;
     const isExpired = item.expiration_date && item.expiration_date < todayStr;
+    const isSoonToExpire = item.expiration_date && item.expiration_date >= todayStr && item.expiration_date <= soonThresholdStr;
 
     if (isExpired) {
       const card = document.createElement('div');
-      card.className = 'polaroid-card';
+      card.className = 'polaroid-card expired-item';
       card.innerHTML = `
         <div>
           <h3>${item.name}</h3>
@@ -265,13 +271,14 @@ function renderInventory() {
       expiredList.appendChild(card);
     } else if (matchesSearch && matchesTag) {
       const card = document.createElement('div');
-      card.className = 'polaroid-card';
+      card.className = `polaroid-card ${isSoonToExpire ? 'soon-to-expire' : ''}`;
       card.innerHTML = `
         <div>
           <h3>${item.name}</h3>
           <p><strong>Stock:</strong> ${item.quantity} ${item.unit}</p>
           <p><strong>Category:</strong> ${item.category}</p>
           ${item.expiration_date ? `<p><strong>Exp:</strong> ${item.expiration_date}</p>` : ''}
+          ${isSoonToExpire ? '<span class="soon-badge">⚠️ Soon to Expire</span>' : ''}
         </div>
         <div class="card-actions">
           <button class="btn btn-secondary" onclick="openEditInventory('${item.id}')">Edit</button>
@@ -286,37 +293,48 @@ function renderInventory() {
 // ====================================================================
 // SHOPPING LIST MODULE
 // ====================================================================
-async function fetchNeedToBuy(client) {
+function renderNeedToBuy() {
   const shoppingContainer = document.getElementById('shopping-list');
-  if (!shoppingContainer || !currentUser) return;
+  if (!shoppingContainer) return;
 
-  try {
-    const { data, error } = await client.from('need_to_buy_list').select('*');
-    shoppingContainer.innerHTML = '';
+  shoppingContainer.innerHTML = '';
 
-    if (error || !data || data.length === 0) {
-      shoppingContainer.innerHTML = '<p style="color: var(--text-muted);">Your shopping list is currently clear!</p>';
-      return;
-    }
+  const todayStr = formatLocalDate(new Date());
 
-    data.forEach(item => {
-      const div = document.createElement('div');
-      div.className = `shopping-item ${item.urgency_reason === 'expired' || item.urgency_reason === 'out_of_stock' ? 'urgent' : ''}`;
-      div.innerHTML = `
-        <div class="shopping-info">
-          <h4>${item.item_name}</h4>
-          <div class="shopping-meta">
-            <span>Deficit: ${item.deficit_quantity || item.total_needed} ${item.unit}</span> | 
-            <span>Status: <strong>${item.urgency_reason}</strong></span>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="openRestockModal('${item.inventory_id || ''}', '${item.item_name}')">✓ Restock</button>
-      `;
-      shoppingContainer.appendChild(div);
-    });
-  } catch (err) {
-    console.warn('Need to Buy notice:', err);
+  // Filter items that have <= 0 stock or are expired
+  const outOfStockOrExpiredItems = activeInventory.filter(item => {
+    const isOut = item.quantity <= 0;
+    const isExpired = item.expiration_date && item.expiration_date < todayStr;
+    return isOut || isExpired;
+  });
+
+  if (outOfStockOrExpiredItems.length === 0) {
+    shoppingContainer.innerHTML = '<p style="color: var(--text-muted);">Your shopping list is currently clear!</p>';
+    return;
   }
+
+  outOfStockOrExpiredItems.forEach(item => {
+    const isOut = item.quantity <= 0;
+    const isExpired = item.expiration_date && item.expiration_date < todayStr;
+
+    let reasonLabel = 'Out of Stock';
+    if (isOut && isExpired) reasonLabel = 'Out of Stock & Expired';
+    else if (isExpired) reasonLabel = 'Expired';
+
+    const div = document.createElement('div');
+    div.className = 'shopping-item urgent';
+    div.innerHTML = `
+      <div class="shopping-info">
+        <h4>${item.name}</h4>
+        <div class="shopping-meta">
+          <span>Current Stock: ${item.quantity} ${item.unit}</span> | 
+          <span>Status: <strong>${reasonLabel}</strong></span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openRestockModal('${item.id}', '${item.name}')">✓ Restock</button>
+    `;
+    shoppingContainer.appendChild(div);
+  });
 }
 
 // ====================================================================
@@ -456,6 +474,43 @@ function setupModalHandlers() {
     };
   }
 
+  // Save Meal Form inputs as a new Recipe Preset
+  document.getElementById('btn-save-as-preset').onclick = async () => {
+    if (!currentUser) return checkAuthGuard();
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    const title = document.getElementById('meal-title').value.trim();
+    const notes = document.getElementById('meal-notes').value.trim();
+
+    if (!title) {
+      alert('Please enter a Meal Title first to create a recipe preset.');
+      return;
+    }
+
+    const payload = {
+      title: title,
+      prep_notes: notes,
+      user_id: currentUser.id
+    };
+
+    const { error } = await client.from('recipes').insert([payload]);
+    if (!error) {
+      alert(`Saved "${title}" as a new Recipe Preset!`);
+      await fetchRecipes(client);
+      
+      // Select the newly created recipe in dropdown
+      const recipeSelect = document.getElementById('meal-recipe-select');
+      recipeSelect.innerHTML = '<option value="">-- Custom Meal --</option>';
+      activeRecipes.forEach(r => {
+        const isSelected = r.title === title ? 'selected' : '';
+        recipeSelect.innerHTML += `<option value="${r.id}" ${isSelected}>${r.title}</option>`;
+      });
+    } else {
+      alert('Error creating recipe preset: ' + error.message);
+    }
+  };
+
   document.getElementById('recipe-form').onsubmit = async (e) => {
     e.preventDefault();
     const client = getSupabaseClient();
@@ -529,7 +584,7 @@ function setupModalHandlers() {
     document.getElementById('restock-modal').classList.add('hidden');
   };
 
-  // MEAL FORM SUBMIT WITH AUTHENTICATED USER ID
+  // MEAL FORM SUBMIT
   document.getElementById('meal-form').onsubmit = async (e) => {
     e.preventDefault();
     const client = getSupabaseClient();
@@ -660,6 +715,7 @@ function openRestockModal(invId, itemName) {
   document.getElementById('restock-modal').classList.remove('hidden');
 }
 
+// FIXED CLEAR DAY FUNCTIONALITY
 function openMealModal(dateStr, existingMeal) {
   if (!currentUser) return checkAuthGuard();
   
@@ -683,19 +739,26 @@ function openMealModal(dateStr, existingMeal) {
     }
   };
 
+  const deleteBtn = document.getElementById('btn-delete-meal');
+
   if (existingMeal) {
     document.getElementById('meal-id').value = existingMeal.id;
     document.getElementById('meal-title').value = existingMeal.custom_title || '';
     document.getElementById('meal-notes').value = existingMeal.prep_notes || '';
     document.getElementById('meal-recipe-select').value = existingMeal.recipe_id || '';
     
-    const deleteBtn = document.getElementById('btn-delete-meal');
     deleteBtn.classList.remove('hidden');
     deleteBtn.onclick = () => {
       showConfirmation('Clear Calendar Day', `Clear meal planned for ${formattedDate}?`, async () => {
         const client = getSupabaseClient();
         if (client && currentUser) {
-          await client.from('calendar_meals').delete().eq('id', existingMeal.id).eq('user_id', currentUser.id);
+          // Delete by ID if available or by meal_date
+          if (existingMeal.id) {
+            await client.from('calendar_meals').delete().eq('id', existingMeal.id).eq('user_id', currentUser.id);
+          } else {
+            await client.from('calendar_meals').delete().eq('meal_date', dateStr).eq('user_id', currentUser.id);
+          }
+          
           document.getElementById('meal-modal').classList.add('hidden');
           await refreshAllData(client);
         }
@@ -705,7 +768,7 @@ function openMealModal(dateStr, existingMeal) {
     document.getElementById('meal-id').value = '';
     document.getElementById('meal-title').value = '';
     document.getElementById('meal-notes').value = '';
-    document.getElementById('btn-delete-meal').classList.add('hidden');
+    deleteBtn.classList.add('hidden');
   }
 
   document.getElementById('meal-modal').classList.remove('hidden');
