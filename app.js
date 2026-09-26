@@ -89,6 +89,17 @@ function formatLocalDate(date) {
   return `${y}-${m}-${d}`;
 }
 
+// Dynamic Font-Size Scaling Helper for Meal Titles
+function calculateTitleFontSize(text) {
+  const len = text ? text.length : 0;
+  if (len === 0) return '0.95rem';
+  if (len <= 6) return '1.85rem';      // Very large ("Pizza", "Steak")
+  if (len <= 12) return '1.45rem';     // Large ("Spaghetti")
+  if (len <= 18) return '1.15rem';     // Medium ("Taco in a Bowl")
+  if (len <= 26) return '0.95rem';     // Small
+  return '0.8rem';                     // Extra long titles
+}
+
 // ====================================================================
 // NAVIGATION & TABS
 // ====================================================================
@@ -174,17 +185,21 @@ function renderCalendar() {
     const monthDay = current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     const meal = activeCalendar.find(m => m.meal_date === dateStr);
+    const titleText = meal ? (meal.custom_title || 'Scheduled Meal') : '+ Add Meal';
+    const fontSize = meal ? calculateTitleFontSize(titleText) : '0.95rem';
 
     const card = document.createElement('div');
     card.className = 'calendar-day-card';
     
     card.innerHTML = `
-      <div>
-        <div class="day-header">
-          <span class="day-title">${dayName}</span>
-          <span>${monthDay}</span>
+      <div class="day-header">
+        <span class="day-title">${dayName}</span>
+        <span>${monthDay}</span>
+      </div>
+      <div class="meal-name-container">
+        <div class="meal-name ${!meal ? 'empty-meal' : ''}" style="font-size: ${fontSize};">
+          ${titleText}
         </div>
-        ${meal ? `<div class="meal-name">${meal.custom_title || 'Scheduled Meal'}</div>` : '<div class="meal-name" style="color: #aaa;">+ Add Meal</div>'}
       </div>
     `;
 
@@ -243,7 +258,6 @@ function renderInventory() {
   today.setHours(0, 0, 0, 0);
   const todayStr = formatLocalDate(today);
 
-  // Date threshold for "Soon to Expire" (3 days)
   const soonThreshold = new Date(today);
   soonThreshold.setDate(today.getDate() + 3);
   const soonThresholdStr = formatLocalDate(soonThreshold);
@@ -301,7 +315,6 @@ function renderNeedToBuy() {
 
   const todayStr = formatLocalDate(new Date());
 
-  // Filter items that have <= 0 stock or are expired
   const outOfStockOrExpiredItems = activeInventory.filter(item => {
     const isOut = item.quantity <= 0;
     const isExpired = item.expiration_date && item.expiration_date < todayStr;
@@ -380,11 +393,59 @@ function renderRecipes() {
       </div>
       <div class="card-actions" style="margin-top:15px;">
         <button class="btn btn-primary" onclick="openAssignRecipeModal('${recipe.id}')">Assign to Date</button>
+        <button class="btn btn-secondary" onclick="openEditRecipeModal('${recipe.id}')">Edit</button>
         <button class="btn btn-danger" onclick="confirmDeleteRecipe('${recipe.id}')">Delete</button>
       </div>
     `;
     container.appendChild(card);
   });
+}
+
+// ====================================================================
+// INGREDIENT ROW HELPER
+// ====================================================================
+function createIngredientRowHTML(selectedName = '', selectedQty = 1) {
+  let options = '<option value="">-- Select Inventory Item --</option>';
+  activeInventory.forEach(inv => {
+    const isSelected = inv.name === selectedName ? 'selected' : '';
+    options += `<option value="${inv.name}" data-unit="${inv.unit}" ${isSelected}>${inv.name} (${inv.unit})</option>`;
+  });
+
+  return `
+    <div class="ingredient-row">
+      <select class="input-field ingredient-item-select">
+        ${options}
+      </select>
+      <input type="number" step="0.01" class="input-field ingredient-qty-input" placeholder="Qty" value="${selectedQty}">
+      <button type="button" class="btn-remove-row" onclick="this.parentElement.remove()">✕</button>
+    </div>
+  `;
+}
+
+function collectIngredientsFromContainer(containerId) {
+  const container = document.getElementById(containerId);
+  const rows = container.querySelectorAll('.ingredient-row');
+  const ingredients = [];
+
+  rows.forEach(row => {
+    const select = row.querySelector('.ingredient-item-select');
+    const qtyInput = row.querySelector('.ingredient-qty-input');
+
+    const name = select.value;
+    const qty = parseFloat(qtyInput.value) || 1;
+    const selectedOption = select.options[select.selectedIndex];
+    const unit = selectedOption ? selectedOption.getAttribute('data-unit') || 'piece' : 'piece';
+
+    if (name) {
+      ingredients.push({
+        ingredient_name: name,
+        required_quantity: qty,
+        unit: unit
+      });
+    }
+  });
+
+  return ingredients;
 }
 
 // ====================================================================
@@ -395,7 +456,6 @@ function setupModalHandlers() {
     btn.onclick = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
   });
 
-  // Header Sign In / Sign Out Button
   document.getElementById('btn-auth-action').onclick = async () => {
     const client = getSupabaseClient();
     if (currentUser && client) {
@@ -406,7 +466,6 @@ function setupModalHandlers() {
     }
   };
 
-  // Toggle Auth Mode (Sign In / Sign Up)
   document.getElementById('toggle-auth-mode').onclick = (e) => {
     e.preventDefault();
     isSignUpMode = !isSignUpMode;
@@ -415,7 +474,6 @@ function setupModalHandlers() {
     document.getElementById('toggle-auth-mode').innerText = isSignUpMode ? 'Already have an account? Sign In' : 'Need an account? Sign Up';
   };
 
-  // Auth Form Submit
   document.getElementById('auth-form').onsubmit = async (e) => {
     e.preventDefault();
     const client = getSupabaseClient();
@@ -463,18 +521,28 @@ function setupModalHandlers() {
     document.getElementById('inventory-modal').classList.remove('hidden');
   };
 
+  document.getElementById('btn-add-meal-ingredient').onclick = () => {
+    const list = document.getElementById('meal-ingredients-list');
+    list.insertAdjacentHTML('beforeend', createIngredientRowHTML());
+  };
+
+  document.getElementById('btn-add-recipe-ingredient').onclick = () => {
+    const list = document.getElementById('recipe-ingredients-list');
+    list.insertAdjacentHTML('beforeend', createIngredientRowHTML());
+  };
+
   const addRecipeBtn = document.getElementById('btn-add-recipe');
   if (addRecipeBtn) {
     addRecipeBtn.onclick = () => {
       if (!currentUser) return checkAuthGuard();
       document.getElementById('recipe-form').reset();
       document.getElementById('recipe-id').value = '';
+      document.getElementById('recipe-ingredients-list').innerHTML = '';
       document.getElementById('recipe-modal-title').innerText = 'Create Recipe Preset';
       document.getElementById('recipe-modal').classList.remove('hidden');
     };
   }
 
-  // Save Meal Form inputs as a new Recipe Preset
   document.getElementById('btn-save-as-preset').onclick = async () => {
     if (!currentUser) return checkAuthGuard();
     const client = getSupabaseClient();
@@ -482,6 +550,7 @@ function setupModalHandlers() {
 
     const title = document.getElementById('meal-title').value.trim();
     const notes = document.getElementById('meal-notes').value.trim();
+    const ingredients = collectIngredientsFromContainer('meal-ingredients-list');
 
     if (!title) {
       alert('Please enter a Meal Title first to create a recipe preset.');
@@ -494,20 +563,29 @@ function setupModalHandlers() {
       user_id: currentUser.id
     };
 
-    const { error } = await client.from('recipes').insert([payload]);
-    if (!error) {
+    const { data, error } = await client.from('recipes').insert([payload]).select().single();
+    if (!error && data) {
+      if (ingredients.length > 0) {
+        const recipeIngs = ingredients.map(i => ({
+          recipe_id: data.id,
+          ingredient_name: i.ingredient_name,
+          required_quantity: i.required_quantity,
+          unit: i.unit
+        }));
+        await client.from('recipe_ingredients').insert(recipeIngs);
+      }
+
       alert(`Saved "${title}" as a new Recipe Preset!`);
       await fetchRecipes(client);
       
-      // Select the newly created recipe in dropdown
       const recipeSelect = document.getElementById('meal-recipe-select');
       recipeSelect.innerHTML = '<option value="">-- Custom Meal --</option>';
       activeRecipes.forEach(r => {
-        const isSelected = r.title === title ? 'selected' : '';
+        const isSelected = r.id === data.id ? 'selected' : '';
         recipeSelect.innerHTML += `<option value="${r.id}" ${isSelected}>${r.title}</option>`;
       });
     } else {
-      alert('Error creating recipe preset: ' + error.message);
+      alert('Error creating recipe preset: ' + (error ? error.message : 'Unknown error'));
     }
   };
 
@@ -519,6 +597,7 @@ function setupModalHandlers() {
     const recipeId = document.getElementById('recipe-id').value;
     const title = document.getElementById('recipe-title-input').value;
     const notes = document.getElementById('recipe-notes-input').value;
+    const ingredients = collectIngredientsFromContainer('recipe-ingredients-list');
 
     const payload = {
       title,
@@ -526,10 +605,24 @@ function setupModalHandlers() {
       user_id: currentUser.id
     };
 
+    let targetRecipeId = recipeId;
+
     if (recipeId) {
       await client.from('recipes').update(payload).eq('id', recipeId).eq('user_id', currentUser.id);
+      await client.from('recipe_ingredients').delete().eq('recipe_id', recipeId);
     } else {
-      await client.from('recipes').insert([payload]);
+      const { data } = await client.from('recipes').insert([payload]).select().single();
+      if (data) targetRecipeId = data.id;
+    }
+
+    if (targetRecipeId && ingredients.length > 0) {
+      const recipeIngs = ingredients.map(i => ({
+        recipe_id: targetRecipeId,
+        ingredient_name: i.ingredient_name,
+        required_quantity: i.required_quantity,
+        unit: i.unit
+      }));
+      await client.from('recipe_ingredients').insert(recipeIngs);
     }
 
     document.getElementById('recipe-modal').classList.add('hidden');
@@ -584,7 +677,6 @@ function setupModalHandlers() {
     document.getElementById('restock-modal').classList.add('hidden');
   };
 
-  // MEAL FORM SUBMIT
   document.getElementById('meal-form').onsubmit = async (e) => {
     e.preventDefault();
     const client = getSupabaseClient();
@@ -715,7 +807,6 @@ function openRestockModal(invId, itemName) {
   document.getElementById('restock-modal').classList.remove('hidden');
 }
 
-// FIXED CLEAR DAY FUNCTIONALITY
 function openMealModal(dateStr, existingMeal) {
   if (!currentUser) return checkAuthGuard();
   
@@ -726,6 +817,9 @@ function openMealModal(dateStr, existingMeal) {
   document.getElementById('meal-date-label').innerText = `Date: ${formattedDate}`;
 
   const recipeSelect = document.getElementById('meal-recipe-select');
+  const mealIngsContainer = document.getElementById('meal-ingredients-list');
+  mealIngsContainer.innerHTML = '';
+
   recipeSelect.innerHTML = '<option value="">-- Custom Meal --</option>';
   activeRecipes.forEach(r => {
     recipeSelect.innerHTML += `<option value="${r.id}">${r.title}</option>`;
@@ -736,6 +830,13 @@ function openMealModal(dateStr, existingMeal) {
     if (selectedRecipe) {
       document.getElementById('meal-title').value = selectedRecipe.title;
       document.getElementById('meal-notes').value = selectedRecipe.prep_notes || '';
+      
+      mealIngsContainer.innerHTML = '';
+      if (selectedRecipe.recipe_ingredients) {
+        selectedRecipe.recipe_ingredients.forEach(ing => {
+          mealIngsContainer.insertAdjacentHTML('beforeend', createIngredientRowHTML(ing.ingredient_name, ing.required_quantity));
+        });
+      }
     }
   };
 
@@ -746,13 +847,21 @@ function openMealModal(dateStr, existingMeal) {
     document.getElementById('meal-title').value = existingMeal.custom_title || '';
     document.getElementById('meal-notes').value = existingMeal.prep_notes || '';
     document.getElementById('meal-recipe-select').value = existingMeal.recipe_id || '';
+
+    if (existingMeal.recipe_id) {
+      const tiedRecipe = activeRecipes.find(r => r.id === existingMeal.recipe_id);
+      if (tiedRecipe && tiedRecipe.recipe_ingredients) {
+        tiedRecipe.recipe_ingredients.forEach(ing => {
+          mealIngsContainer.insertAdjacentHTML('beforeend', createIngredientRowHTML(ing.ingredient_name, ing.required_quantity));
+        });
+      }
+    }
     
     deleteBtn.classList.remove('hidden');
     deleteBtn.onclick = () => {
       showConfirmation('Clear Calendar Day', `Clear meal planned for ${formattedDate}?`, async () => {
         const client = getSupabaseClient();
         if (client && currentUser) {
-          // Delete by ID if available or by meal_date
           if (existingMeal.id) {
             await client.from('calendar_meals').delete().eq('id', existingMeal.id).eq('user_id', currentUser.id);
           } else {
@@ -772,6 +881,30 @@ function openMealModal(dateStr, existingMeal) {
   }
 
   document.getElementById('meal-modal').classList.remove('hidden');
+}
+
+// OPEN EDIT RECIPE MODAL
+function openEditRecipeModal(recipeId) {
+  if (!currentUser) return checkAuthGuard();
+
+  const recipe = activeRecipes.find(r => r.id === recipeId);
+  if (!recipe) return;
+
+  document.getElementById('recipe-id').value = recipe.id;
+  document.getElementById('recipe-title-input').value = recipe.title || '';
+  document.getElementById('recipe-notes-input').value = recipe.prep_notes || '';
+  document.getElementById('recipe-modal-title').innerText = 'Edit Recipe Preset';
+
+  const list = document.getElementById('recipe-ingredients-list');
+  list.innerHTML = '';
+
+  if (recipe.recipe_ingredients && recipe.recipe_ingredients.length > 0) {
+    recipe.recipe_ingredients.forEach(ing => {
+      list.insertAdjacentHTML('beforeend', createIngredientRowHTML(ing.ingredient_name, ing.required_quantity));
+    });
+  }
+
+  document.getElementById('recipe-modal').classList.remove('hidden');
 }
 
 function openAssignRecipeModal(recipeId) {
