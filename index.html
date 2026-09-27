@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meal Planner & Inventory System</title>
-  
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
-  
+
   <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
 
@@ -81,9 +81,12 @@
 
     <!-- 3. NEED TO BUY TAB -->
     <section id="need-to-buy-tab" class="tab-content">
-      <div class="section-header">
-        <h2>Need to Buy List</h2>
-        <span class="sub-text">Sorted by order of urgency for planned meals</span>
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2>Need to Buy List</h2>
+          <span class="sub-text">Sorted by order of urgency for planned meals</span>
+        </div>
+        <button id="btn-add-need-to-buy" class="btn btn-primary">+ Add Item to Need to Buy</button>
       </div>
       <div id="shopping-list" class="shopping-list">
         <!-- Dynamically rendered urgency items -->
@@ -148,6 +151,51 @@
     </div>
   </div>
 
+  <!-- ADD ITEM TO NEED TO BUY MODAL -->
+  <div id="add-buy-item-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">Add Item to Need to Buy</h3>
+      <form id="add-buy-item-form">
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="buy-item-name" class="input-field" placeholder="e.g. Olive Oil, Milk" required />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount / Quantity Needed</label>
+            <input type="text" id="buy-item-amount" class="input-field" placeholder="e.g. 1, 2, 1/2" value="1" required />
+          </div>
+          <div class="form-group">
+            <label>Unit</label>
+            <select id="buy-item-unit" class="input-field">
+              <option value="count">count / piece</option>
+              <option value="gallon">gallon</option>
+              <option value="cup">cup</option>
+              <option value="fl_oz">fl oz</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
+              <option value="pack">pack</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Category Tag</label>
+          <select id="buy-item-category" class="input-field">
+            <option value="Pantry">Pantry</option>
+            <option value="Fridge">Fridge</option>
+            <option value="Freezer">Freezer</option>
+            <option value="Produce">Produce</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add to Shopping List</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ADD/EDIT INVENTORY MODAL -->
   <div id="inventory-modal" class="modal-overlay hidden">
     <div class="modal-card">
@@ -172,14 +220,13 @@
           <div class="form-group">
             <label>Unit</label>
             <select id="inv-unit" class="input-field">
-              <option value="piece">piece</option>
-              <option value="g">g</option>
-              <option value="kg">kg</option>
-              <option value="oz">oz</option>
-              <option value="lb">lb</option>
-              <option value="ml">ml</option>
-              <option value="l">l</option>
+              <option value="count">count / piece</option>
+              <option value="fl_oz">fl oz</option>
+              <option value="l">liter</option>
+              <option value="gallon">gallon</option>
               <option value="cup">cup</option>
+              <option value="tbsp">tbsp</option>
+              <option value="tsp">tsp</option>
               <option value="can">can</option>
               <option value="pack">pack</option>
             </select>
@@ -187,8 +234,8 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Current Stock</label>
-            <input type="number" step="0.01" id="inv-qty" class="input-field" required />
+            <label>Current Stock (Whole, decimal, or fraction like 3/4)</label>
+            <input type="text" id="inv-qty" class="input-field" placeholder="e.g. 1 1/2 or 0.75" required />
           </div>
           <div class="form-group">
             <label>Expiration Date (Optional)</label>
@@ -209,10 +256,11 @@
       <h3 class="modal-title">Restock Purchased Item</h3>
       <form id="restock-form">
         <input type="hidden" id="restock-inv-id" />
+        <input type="hidden" id="restock-category" />
         <p id="restock-item-name" class="highlight-text"></p>
         <div class="form-group">
-          <label>Added Quantity</label>
-          <input type="number" step="0.01" id="restock-qty" class="input-field" required />
+          <label>Added Quantity (Whole, decimal, or fraction like 1/2)</label>
+          <input type="text" id="restock-qty" class="input-field" placeholder="e.g. 1/2" required />
         </div>
         <div class="form-group">
           <label>New Expiration Date (Optional)</label>
@@ -226,7 +274,7 @@
     </div>
   </div>
 
-  <!-- MEAL ASSIGNMENT MODAL WITH INGREDIENTS SECTION -->
+  <!-- MEAL ASSIGNMENT MODAL WITH LIFECYCLE BUTTONS -->
   <div id="meal-modal" class="modal-overlay hidden">
     <div class="modal-card">
       <h3 id="meal-modal-title" class="modal-title">Schedule Meal</h3>
@@ -234,7 +282,7 @@
         <input type="hidden" id="meal-id" />
         <input type="hidden" id="meal-date-val" />
         <p id="meal-date-label" class="highlight-text"></p>
-        
+
         <div class="form-group">
           <label>Recipe Preset (Optional)</label>
           <select id="meal-recipe-select" class="input-field">
@@ -267,16 +315,22 @@
           <button type="button" id="btn-save-as-preset" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;">+ Save Form as Recipe Preset</button>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" id="btn-delete-meal" class="btn btn-danger hidden">Clear Day</button>
-          <button type="button" class="btn btn-secondary close-modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Meal</button>
+        <div class="modal-actions" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button type="button" id="btn-cancel-meal-restore" class="btn btn-danger hidden" style="font-size:0.75rem;">Delete & Restore Stock</button>
+            <button type="button" id="btn-meal-consumed" class="btn btn-secondary hidden" style="font-size:0.75rem; background: var(--primary-green);">✓ Consumed</button>
+            <button type="button" id="btn-clear-day-fields" class="btn btn-secondary" style="font-size:0.75rem;">Clear Day</button>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary close-modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Meal</button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- RECIPE CREATION/EDIT MODAL WITH INGREDIENTS SECTION -->
+  <!-- RECIPE CREATION/EDIT MODAL -->
   <div id="recipe-modal" class="modal-overlay hidden">
     <div class="modal-card">
       <h3 id="recipe-modal-title" class="modal-title">Create Recipe Preset</h3>
@@ -291,7 +345,6 @@
           <textarea id="recipe-notes-input" class="input-field textarea-field" rows="2"></textarea>
         </div>
 
-        <!-- RECIPE PRESET INGREDIENTS SECTION -->
         <div class="form-group ingredient-picker-box">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <label style="margin:0;">Ingredients from Inventory</label>
@@ -322,6 +375,73 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary close-modal">Cancel</button>
         <button type="button" id="btn-confirm-assign-recipe" class="btn btn-primary">Assign Meal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNIT CONVERTER / FRACTION CALCULATOR MODAL -->
+  <div id="converter-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 class="modal-title">Unit & Fraction Calculator</h3>
+      <p style="font-size: 0.85rem; margin-bottom: 12px; color: var(--text-muted);">
+        Target Inventory Unit: <strong id="converter-target-unit" style="color: var(--primary-red);">piece</strong>
+      </p>
+      <div class="form-group">
+        <label>Measurement Unit Used in Recipe</label>
+        <select id="converter-unit-select" class="input-field">
+          <option value="tsp">tsp (Teaspoon)</option>
+          <option value="tbsp">tbsp (Tablespoon)</option>
+          <option value="cup">cup</option>
+          <option value="fl_oz">fl oz (Fluid Ounce)</option>
+          <option value="gallon">gallon</option>
+          <option value="l">l (Liter)</option>
+          <option value="piece">piece / count</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Whole Number</label>
+          <select id="converter-whole-select" class="input-field">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="16">16</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fraction</label>
+          <select id="converter-fraction-select" class="input-field">
+            <option value="0">None (0)</option>
+            <option value="0.03125">1/32 (1/32 tsp)</option>
+            <option value="0.0625">1/16 (1/16 tsp)</option>
+            <option value="0.125">1/8 (⅛)</option>
+            <option value="0.2">1/5 (⅕)</option>
+            <option value="0.25">1/4 (¼)</option>
+            <option value="0.333333">1/3 (⅓)</option>
+            <option value="0.375">3/8 (⅜)</option>
+            <option value="0.4">2/5 (⅖)</option>
+            <option value="0.5">1/2 (½)</option>
+            <option value="0.6">3/5 (⅗)</option>
+            <option value="0.625">5/8 (⅝)</option>
+            <option value="0.666667">2/3 (⅔)</option>
+            <option value="0.75">3/4 (¾)</option>
+            <option value="0.8">4/5 (⅘)</option>
+            <option value="0.875">7/8 (⅞)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+        <button type="button" id="btn-calculate-unit" class="btn btn-primary">Calculate & Apply</button>
       </div>
     </div>
   </div>
