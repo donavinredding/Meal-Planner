@@ -23,33 +23,73 @@ let saveTimeout = null;
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupModalHandlers();
-  checkAdminState();
+  
+  // Initialize Admin State
+  window.isAdminUnlocked = !!localStorage.getItem(GH_CONFIG.tokenKey);
+  updateAdminUI();
+  
   loadDataFromGitHub();
 });
 
 // ====================================================================
-// GITHUB API HELPERS
+// GITHUB API HELPERS & ADMIN STATE
 // ====================================================================
 function isAdmin() {
-  return !!localStorage.getItem(GH_CONFIG.tokenKey);
+  return window.isAdminUnlocked;
 }
 
-function checkAdminState() {
-  if (isAdmin()) {
-    currentUser = { email: "Admin (GitHub)" };
-    document.body.classList.add('admin-unlocked');
+function updateAdminUI() {
+  const hasToken = !!localStorage.getItem(GH_CONFIG.tokenKey);
+  const statusEl = document.getElementById("admin-status");
+  
+  if (window.isAdminUnlocked) {
+    if (statusEl) statusEl.textContent = "🔓 Unlocked on this browser";
+    document.getElementById("btn-unlock").style.display = "none";
+    document.getElementById("btn-lock").style.display = "block";
+    document.getElementById("btn-forget").style.display = "block";
+    document.body.classList.add("admin-unlocked");
   } else {
-    currentUser = null;
-    document.body.classList.remove('admin-unlocked');
+    if (statusEl) statusEl.textContent = hasToken ? "🔒 Locked (Token Saved)" : "🔒 Locked (No Token)";
+    document.getElementById("btn-unlock").style.display = "block";
+    document.getElementById("btn-lock").style.display = "none";
+    document.getElementById("btn-forget").style.display = hasToken ? "block" : "none";
+    document.body.classList.remove("admin-unlocked");
   }
-  updateAuthUI();
 }
 
-function updateAuthUI() {
-  const emailEl = document.getElementById('user-display-email');
-  const btnEl = document.getElementById('btn-auth-action');
-  if (emailEl) emailEl.innerText = isAdmin() ? 'Admin Mode' : 'Not Signed In';
-  if (btnEl) btnEl.innerText = isAdmin() ? 'Lock' : 'Unlock Admin';
+function toggleAdminPanel() {
+  const panel = document.getElementById("admin-panel");
+  if (!panel) return;
+  panel.classList.toggle("hidden");
+  updateAdminUI();
+}
+
+function openTokenModal() {
+  document.getElementById("token-input").value = "";
+  document.getElementById("token-modal").classList.remove("hidden");
+}
+
+function saveToken() {
+  const token = document.getElementById("token-input").value.trim();
+  if (!token) return alert("Please enter a valid token.");
+  
+  localStorage.setItem(GH_CONFIG.tokenKey, token);
+  window.isAdminUnlocked = true;
+  document.getElementById("token-modal").classList.add("hidden");
+  updateAdminUI();
+}
+
+function lockAdmin() {
+  window.isAdminUnlocked = false;
+  updateAdminUI();
+}
+
+function confirmForgetToken() {
+  if (confirm("Are you sure you want to completely remove the GitHub token from this browser? You will have to paste it again next time.")) {
+    localStorage.removeItem(GH_CONFIG.tokenKey);
+    window.isAdminUnlocked = false;
+    updateAdminUI();
+  }
 }
 
 function toBase64(str) {
@@ -627,17 +667,6 @@ function collectIngredientsFromContainer(containerId) {
 // ====================================================================
 function setupModalHandlers() {
   document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')));
-
-  document.getElementById('btn-auth-action').onclick = () => {
-    if (isAdmin()) {
-      localStorage.removeItem(GH_CONFIG.tokenKey);
-      checkAdminState();
-      alert("Locked and token cleared.");
-    } else {
-      const token = prompt("Enter GitHub Token:");
-      if (token) { localStorage.setItem(GH_CONFIG.tokenKey, token.trim()); checkAdminState(); }
-    }
-  };
 
   document.getElementById('btn-calculate-unit').onclick = () => {
     if (!activeTargetQtyInput) return;

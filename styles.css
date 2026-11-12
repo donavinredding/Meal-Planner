@@ -576,3 +576,50 @@ body.admin-unlocked .admin-flex-row {
 body.admin-unlocked button.admin-only {
   display: inline-block !important;
 }
+
+/* --- Standardized Admin Gear & Panel --- */
+.admin-gear {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2500;
+  background: var(--primary-tan, #BC9E84);
+  color: #fff;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.admin-gear:hover { background: var(--primary-orange, #B75109); transform: scale(1.05); }
+
+.admin-panel {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 2500;
+  width: min(320px, calc(100vw - 40px));
+  background: #ffffff;
+  border: 2px solid var(--primary-tan, #BC9E84);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  font-family: var(--font-body, monospace);
+}
+
+.admin-row { display: flex; justify-content: space-between; align-items: center; }
+.admin-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; }
+
+.admin-btn {
+  width: 100%; padding: 10px; border: none; border-radius: 6px;
+  font-family: inherit; font-weight: bold; cursor: pointer;
+  background: var(--primary-green, #6B8071); color: white;
+}
+.admin-btn.secondary { background: #888; }
+.admin-btn.danger { background: var(--primary-red, #66021E); }

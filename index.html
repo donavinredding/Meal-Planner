@@ -12,10 +12,6 @@
 <body>
 
   <header class="app-header">
-    <div class="user-auth-bar">
-      <span id="user-display-email">Not Signed In</span>
-      <button id="btn-auth-action" class="btn btn-secondary">Unlock Admin</button>
-    </div>
     <h1 class="app-title">Meal Planner & Inventory</h1>
     <p class="app-subtitle">AUTOMATED MEAL TRACKER & SHOPPING LIST</p>
   </header>
@@ -391,5 +387,36 @@
   </div>
 
   <script src="app.js"></script>
+  <!-- FLOATING GEAR BUTTON -->
+<button class="admin-gear" type="button" onclick="toggleAdminPanel()" title="Site Admin">⚙️</button>
+
+<!-- ADMIN CONTROL PANEL -->
+<div id="admin-panel" class="admin-panel hidden">
+  <div class="admin-row">
+    <strong>Site Admin</strong>
+    <button type="button" class="admin-close" onclick="toggleAdminPanel()" title="Close">✕</button>
+  </div>
+  
+  <p id="admin-status" style="margin: 10px 0; font-weight: bold;">🔒 Locked</p>
+  
+  <div class="admin-actions" style="display: flex; flex-direction: column; gap: 8px;">
+    <button id="btn-unlock" type="button" class="admin-btn" onclick="openTokenModal()" style="display: none;">🔑 Unlock Admin</button>
+    <button id="btn-lock" type="button" class="admin-btn secondary" onclick="lockAdmin()" style="display: none;">🔒 Lock Site (Keep Token)</button>
+    <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()" style="display: none;">🗑️ Forget Token</button>
+  </div>
+</div>
+
+<!-- TOKEN INPUT MODAL -->
+<div id="token-modal" class="modal-overlay hidden" style="z-index: 3000;">
+  <div class="modal-card">
+    <h3 class="modal-title">Unlock Admin</h3>
+    <p style="font-size: 0.85rem; margin-bottom: 15px;">Paste your GitHub Fine-Grained Personal Access Token.</p>
+    <input type="password" id="token-input" class="input-field" placeholder="github_pat_..." />
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('token-modal').classList.add('hidden')">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveToken()">Unlock</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
