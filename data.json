@@ -1,7 +1,8 @@
 {
   "version": 1,
   "updatedAt": null,
-  "nextStateTargets": [],
-  "tripNotes": "",
-  "states": {}
+  "inventory": [],
+  "recipes": [],
+  "calendar_meals": [],
+  "manualBuyItems": []
 }

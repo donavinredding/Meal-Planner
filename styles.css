@@ -554,3 +554,25 @@ body {
     flex-direction: column;
   }
 }
+
+/* ====================================================================
+   ADMIN ACCESS CONTROL
+   ==================================================================== */
+.admin-only {
+  display: none !important;
+}
+
+body.admin-unlocked .admin-only {
+  display: block !important;
+}
+
+/* Ensure flex containers correctly display buttons when unlocked */
+body.admin-unlocked .card-actions,
+body.admin-unlocked .section-header,
+body.admin-unlocked .admin-flex-row {
+  display: flex !important;
+}
+
+body.admin-unlocked button.admin-only {
+  display: inline-block !important;
+}

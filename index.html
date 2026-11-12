@@ -4,47 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meal Planner & Inventory System</title>
-
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="styles.css">
-
-  <!-- Supabase JS Client v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
   <header class="app-header">
-    <!-- Discreet Admin Trigger -->
-    <button onclick="openAdmin()" style="opacity: 0.2; background: none; border: none; cursor: pointer; font-size: 1.2rem;">⚙️</button>
-
-    <!-- Hidden Admin Editor -->
-    <div id="admin-panel" style="display: none; border: 2px solid #006098; background: #f9f9f9; padding: 16px; border-radius: 8px; margin-top: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0; color: #006098;">Site Data Publisher</h3>
-        <button onclick="logoutAdmin()" style="font-size: 0.8rem; cursor: pointer;">Lock / Clear Token</button>
-      </div>
-      
-      <textarea id="json-editor" rows="12" style="width: 100%; margin: 12px 0; font-family: monospace; padding: 8px;"></textarea>
-      
-      <button id="publish-btn" onclick="publishToGitHub()" style="background: #006098; color: #F8E316; font-weight: bold; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
-        Save & Publish Live
-      </button>
-      <p id="publish-status" style="margin-top: 8px; font-size: 0.9rem;"></p>
-    </div>
-    <!-- <div class="user-auth-bar">
+    <div class="user-auth-bar">
       <span id="user-display-email">Not Signed In</span>
-      <button id="btn-auth-action" class="btn btn-secondary">Sign In</button>
-    </div> -->
+      <button id="btn-auth-action" class="btn btn-secondary">Unlock Admin</button>
+    </div>
     <h1 class="app-title">Meal Planner & Inventory</h1>
     <p class="app-subtitle">AUTOMATED MEAL TRACKER & SHOPPING LIST</p>
   </header>
 
-  <!-- Navigation Tabs -->
   <nav class="nav-tabs">
     <button class="tab-btn active" data-tab="calendar">🗓️ Calendar</button>
     <button class="tab-btn" data-tab="inventory">📦 Inventory</button>
@@ -53,25 +28,21 @@
   </nav>
 
   <main class="content-container">
-
     <!-- 1. CALENDAR TAB -->
     <section id="calendar-tab" class="tab-content active">
       <div class="section-header">
         <h2>14-Day Calendar Grid</h2>
         <span class="sub-text">Calculated dynamically from current week's Sunday</span>
       </div>
-      <div id="calendar-grid" class="calendar-grid">
-        <!-- Dynamically rendered 14 calendar days -->
-      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
     </section>
 
     <!-- 2. INVENTORY TAB -->
     <section id="inventory-tab" class="tab-content">
       <div class="section-header">
         <h2>Active Inventory</h2>
-        <button class="btn btn-primary" id="btn-add-inventory">+ Add New Item</button>
+        <button class="btn btn-primary admin-only" id="btn-add-inventory">+ Add New Item</button>
       </div>
-
       <div class="filter-bar">
         <input type="text" id="inventory-search" placeholder="Search inventory items..." class="input-field" />
         <div id="tag-filters" class="tag-filters">
@@ -82,17 +53,10 @@
           <button class="tag-pill" data-tag="Produce">Produce</button>
         </div>
       </div>
-
-      <div id="inventory-list" class="card-grid">
-        <!-- Dynamically rendered inventory items -->
-      </div>
-
-      <!-- Expired / Replacement Section -->
+      <div id="inventory-list" class="card-grid"></div>
       <div class="expired-section">
         <h3>⚠️ Expired / Needs Replacement</h3>
-        <div id="expired-list" class="card-grid">
-          <!-- Dynamically populated expired items -->
-        </div>
+        <div id="expired-list" class="card-grid"></div>
       </div>
     </section>
 
@@ -103,59 +67,27 @@
           <h2>Need to Buy List</h2>
           <span class="sub-text">Sorted by order of urgency for planned meals</span>
         </div>
-        <button id="btn-add-need-to-buy" class="btn btn-primary">+ Add Item to Need to Buy</button>
+        <button id="btn-add-need-to-buy" class="btn btn-primary admin-only">+ Add Item</button>
       </div>
-      <div id="shopping-list" class="shopping-list">
-        <!-- Dynamically rendered urgency items -->
-      </div>
+      <div id="shopping-list" class="shopping-list"></div>
     </section>
 
     <!-- 4. RECIPE LIBRARY TAB -->
     <section id="recipes-tab" class="tab-content">
       <div class="section-header">
         <h2>Recipe & Preset Library</h2>
-        <button class="btn btn-primary" id="btn-add-recipe">+ Create Recipe Preset</button>
+        <button class="btn btn-primary admin-only" id="btn-add-recipe">+ Create Recipe Preset</button>
       </div>
-      <div id="recipe-list" class="card-grid">
-        <!-- Dynamically rendered recipe cards -->
-      </div>
+      <div id="recipe-list" class="card-grid"></div>
     </section>
-
   </main>
 
   <footer class="app-footer">
     <p>Created for Meal Planning & Household Inventory</p>
   </footer>
 
-  <!-- ==================================================================== -->
-  <!-- MODALS -->
-  <!-- ==================================================================== -->
-
-  <!-- AUTHENTICATION MODAL -->
-  <div id="auth-modal" class="modal-overlay hidden">
-    <div class="modal-card">
-      <h3 id="auth-modal-title" class="modal-title">Sign In</h3>
-      <p id="auth-status-msg" style="color: var(--primary-red); font-size: 0.85rem; margin-bottom: 10px;"></p>
-      <form id="auth-form">
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" id="auth-email" class="input-field" placeholder="you@example.com" required />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="auth-password" class="input-field" placeholder="••••••••" required />
-        </div>
-        <div class="modal-actions" style="justify-content: space-between; align-items: center;">
-          <a href="#" id="toggle-auth-mode" style="font-size: 0.85rem; color: var(--primary-red);">Need an account? Sign Up</a>
-          <div>
-            <button type="button" class="btn btn-secondary close-modal">Cancel</button>
-            <button type="submit" id="btn-auth-submit" class="btn btn-primary">Sign In</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
+  <!-- MODALS (Same as before, no changes needed except removing auth modal) -->
+  
   <!-- GENERIC CONFIRMATION MODAL -->
   <div id="confirm-modal" class="modal-overlay hidden">
     <div class="modal-card">
@@ -317,30 +249,27 @@
           <textarea id="meal-notes" class="input-field textarea-field" rows="2"></textarea>
         </div>
 
-        <!-- INGREDIENTS SECTION FROM INVENTORY -->
         <div class="form-group ingredient-picker-box">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <label style="margin:0;">Required Ingredients from Inventory</label>
-            <button type="button" id="btn-add-meal-ingredient" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;">+ Add Item</button>
+            <button type="button" id="btn-add-meal-ingredient" class="btn btn-secondary admin-only" style="padding: 2px 8px; font-size: 0.8rem;">+ Add Item</button>
           </div>
-          <div id="meal-ingredients-list" class="ingredients-list-container">
-            <!-- Dynamically appended ingredient rows -->
-          </div>
+          <div id="meal-ingredients-list" class="ingredients-list-container"></div>
         </div>
 
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 15px;" class="admin-only">
           <button type="button" id="btn-save-as-preset" class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;">+ Save Form as Recipe Preset</button>
         </div>
 
         <div class="modal-actions" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between;">
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;" class="admin-only">
             <button type="button" id="btn-cancel-meal-restore" class="btn btn-danger hidden" style="font-size:0.75rem;">Delete & Restore Stock</button>
             <button type="button" id="btn-meal-consumed" class="btn btn-secondary hidden" style="font-size:0.75rem; background: var(--primary-green);">✓ Consumed</button>
             <button type="button" id="btn-clear-day-fields" class="btn btn-secondary" style="font-size:0.75rem;">Clear Day</button>
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn btn-secondary close-modal">Close</button>
-            <button type="submit" class="btn btn-primary">Save Meal</button>
+            <button type="submit" class="btn btn-primary admin-only">Save Meal</button>
           </div>
         </div>
       </form>
@@ -367,9 +296,7 @@
             <label style="margin:0;">Ingredients from Inventory</label>
             <button type="button" id="btn-add-recipe-ingredient" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.8rem;">+ Add Item</button>
           </div>
-          <div id="recipe-ingredients-list" class="ingredients-list-container">
-            <!-- Dynamically appended ingredient rows -->
-          </div>
+          <div id="recipe-ingredients-list" class="ingredients-list-container"></div>
         </div>
 
         <div class="modal-actions">
@@ -438,21 +365,21 @@
           <label>Fraction</label>
           <select id="converter-fraction-select" class="input-field">
             <option value="0">None (0)</option>
-            <option value="0.03125">1/32 (1/32 tsp)</option>
-            <option value="0.0625">1/16 (1/16 tsp)</option>
-            <option value="0.125">1/8 (⅛)</option>
-            <option value="0.2">1/5 (⅕)</option>
-            <option value="0.25">1/4 (¼)</option>
-            <option value="0.333333">1/3 (⅓)</option>
-            <option value="0.375">3/8 (⅜)</option>
-            <option value="0.4">2/5 (⅖)</option>
-            <option value="0.5">1/2 (½)</option>
-            <option value="0.6">3/5 (⅗)</option>
-            <option value="0.625">5/8 (⅝)</option>
-            <option value="0.666667">2/3 (⅔)</option>
-            <option value="0.75">3/4 (¾)</option>
-            <option value="0.8">4/5 (⅘)</option>
-            <option value="0.875">7/8 (⅞)</option>
+            <option value="0.03125">1/32</option>
+            <option value="0.0625">1/16</option>
+            <option value="0.125">1/8</option>
+            <option value="0.2">1/5</option>
+            <option value="0.25">1/4</option>
+            <option value="0.333333">1/3</option>
+            <option value="0.375">3/8</option>
+            <option value="0.4">2/5</option>
+            <option value="0.5">1/2</option>
+            <option value="0.6">3/5</option>
+            <option value="0.625">5/8</option>
+            <option value="0.666667">2/3</option>
+            <option value="0.75">3/4</option>
+            <option value="0.8">4/5</option>
+            <option value="0.875">7/8</option>
           </select>
         </div>
       </div>
@@ -464,98 +391,5 @@
   </div>
 
   <script src="app.js"></script>
-  <script>
-  // 1. Configure your repository details
-  const GH_CONFIG = {
-    owner: "donavinredding",
-    repo: "Meal-Planner", // e.g., "donavin-tianna-50-states"
-    path: "data.json",
-    branch: "main"
-  };
-
-  // Helper to properly encode UTF-8/emojis to Base64
-  function toBase64(str) {
-    return btoa(unescape(encodeURIComponent(str)));
-  }
-
-  // 2. Unlock Admin Panel
-  async function openAdmin() {
-    let token = localStorage.getItem("gh_publish_token");
-    if (!token) {
-      token = prompt("Enter your GitHub Publish Token:");
-      if (!token) return;
-      localStorage.setItem("gh_publish_token", token.trim());
-    }
-
-    document.getElementById("admin-panel").style.display = "block";
-    
-    // Load current data.json into the editor
-    const res = await fetch(`./${GH_CONFIG.path}?t=${Date.now()}`);
-    if (res.ok) {
-      const text = await res.text();
-      document.getElementById("json-editor").value = text;
-    }
-  }
-
-  function logoutAdmin() {
-    localStorage.removeItem("gh_publish_token");
-    document.getElementById("admin-panel").style.display = "none";
-    alert("Locked and token cleared from this browser.");
-  }
-
-  // 3. Push updates directly to GitHub
-  async function publishToGitHub() {
-    const token = localStorage.getItem("gh_publish_token");
-    const statusEl = document.getElementById("publish-status");
-    const btn = document.getElementById("publish-btn");
-    const rawContent = document.getElementById("json-editor").value;
-
-    // Validate JSON before pushing so you never break the site
-    try {
-      JSON.parse(rawContent);
-    } catch (e) {
-      statusEl.textContent = "❌ Invalid JSON format. Fix syntax errors before saving.";
-      return;
-    }
-
-    btn.disabled = true;
-    statusEl.textContent = "⏳ Fetching file fingerprint from GitHub...";
-
-    const apiUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
-    const headers = {
-      "Authorization": `Bearer ${token}`,
-      "Accept": "application/vnd.github+json",
-      "Content-Type": "application/json"
-    };
-
-    try {
-      // Step A: Get the current file's SHA (required by GitHub to overwrite a file)
-      const getRes = await fetch(`${apiUrl}?ref=${GH_CONFIG.branch}`, { headers });
-      if (!getRes.ok) throw new Error(`Failed to fetch file SHA (${getRes.status}). Check your token or repo name.`);
-      const fileData = await getRes.json();
-
-      // Step B: Commit the updated content
-      statusEl.textContent = "🚀 Publishing changes to GitHub...";
-      const putRes = await fetch(apiUrl, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({
-          message: "Update site data via Admin Panel",
-          content: toBase64(rawContent),
-          sha: fileData.sha,
-          branch: GH_CONFIG.branch
-        })
-      });
-
-      if (!putRes.ok) throw new Error(`Publish failed (${putRes.status})`);
-
-      statusEl.textContent = "✅ Published! GitHub Pages will update the live site in ~30-60 seconds.";
-    } catch (err) {
-      statusEl.textContent = `❌ Error: ${err.message}`;
-    } finally {
-      btn.disabled = false;
-    }
-  }
-</script>
 </body>
 </html>
