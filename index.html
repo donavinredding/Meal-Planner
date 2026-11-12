@@ -19,10 +19,27 @@
 <body>
 
   <header class="app-header">
-    <div class="user-auth-bar">
+    <!-- Discreet Admin Trigger -->
+    <button onclick="openAdmin()" style="opacity: 0.2; background: none; border: none; cursor: pointer; font-size: 1.2rem;">⚙️</button>
+
+    <!-- Hidden Admin Editor -->
+    <div id="admin-panel" style="display: none; border: 2px solid #006098; background: #f9f9f9; padding: 16px; border-radius: 8px; margin-top: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; color: #006098;">Site Data Publisher</h3>
+        <button onclick="logoutAdmin()" style="font-size: 0.8rem; cursor: pointer;">Lock / Clear Token</button>
+      </div>
+      
+      <textarea id="json-editor" rows="12" style="width: 100%; margin: 12px 0; font-family: monospace; padding: 8px;"></textarea>
+      
+      <button id="publish-btn" onclick="publishToGitHub()" style="background: #006098; color: #F8E316; font-weight: bold; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+        Save & Publish Live
+      </button>
+      <p id="publish-status" style="margin-top: 8px; font-size: 0.9rem;"></p>
+    </div>
+    <!-- <div class="user-auth-bar">
       <span id="user-display-email">Not Signed In</span>
       <button id="btn-auth-action" class="btn btn-secondary">Sign In</button>
-    </div>
+    </div> -->
     <h1 class="app-title">Meal Planner & Inventory</h1>
     <p class="app-subtitle">AUTOMATED MEAL TRACKER & SHOPPING LIST</p>
   </header>
@@ -447,5 +464,98 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+  // 1. Configure your repository details
+  const GH_CONFIG = {
+    owner: "donavinredding",
+    repo: "Meal-Planner", // e.g., "donavin-tianna-50-states"
+    path: "data.json",
+    branch: "main"
+  };
+
+  // Helper to properly encode UTF-8/emojis to Base64
+  function toBase64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  // 2. Unlock Admin Panel
+  async function openAdmin() {
+    let token = localStorage.getItem("gh_publish_token");
+    if (!token) {
+      token = prompt("Enter your GitHub Publish Token:");
+      if (!token) return;
+      localStorage.setItem("gh_publish_token", token.trim());
+    }
+
+    document.getElementById("admin-panel").style.display = "block";
+    
+    // Load current data.json into the editor
+    const res = await fetch(`./${GH_CONFIG.path}?t=${Date.now()}`);
+    if (res.ok) {
+      const text = await res.text();
+      document.getElementById("json-editor").value = text;
+    }
+  }
+
+  function logoutAdmin() {
+    localStorage.removeItem("gh_publish_token");
+    document.getElementById("admin-panel").style.display = "none";
+    alert("Locked and token cleared from this browser.");
+  }
+
+  // 3. Push updates directly to GitHub
+  async function publishToGitHub() {
+    const token = localStorage.getItem("gh_publish_token");
+    const statusEl = document.getElementById("publish-status");
+    const btn = document.getElementById("publish-btn");
+    const rawContent = document.getElementById("json-editor").value;
+
+    // Validate JSON before pushing so you never break the site
+    try {
+      JSON.parse(rawContent);
+    } catch (e) {
+      statusEl.textContent = "❌ Invalid JSON format. Fix syntax errors before saving.";
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = "⏳ Fetching file fingerprint from GitHub...";
+
+    const apiUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    };
+
+    try {
+      // Step A: Get the current file's SHA (required by GitHub to overwrite a file)
+      const getRes = await fetch(`${apiUrl}?ref=${GH_CONFIG.branch}`, { headers });
+      if (!getRes.ok) throw new Error(`Failed to fetch file SHA (${getRes.status}). Check your token or repo name.`);
+      const fileData = await getRes.json();
+
+      // Step B: Commit the updated content
+      statusEl.textContent = "🚀 Publishing changes to GitHub...";
+      const putRes = await fetch(apiUrl, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          message: "Update site data via Admin Panel",
+          content: toBase64(rawContent),
+          sha: fileData.sha,
+          branch: GH_CONFIG.branch
+        })
+      });
+
+      if (!putRes.ok) throw new Error(`Publish failed (${putRes.status})`);
+
+      statusEl.textContent = "✅ Published! GitHub Pages will update the live site in ~30-60 seconds.";
+    } catch (err) {
+      statusEl.textContent = `❌ Error: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+</script>
 </body>
 </html>
